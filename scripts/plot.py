@@ -53,13 +53,14 @@ def _build_model_label(model_config, exp_dir):
     return f"IBM-2 ($C_{{\\beta}}={c_beta:.1f}$)"
 
 
-def _spectra_panel_labels(c_beta):
-    if c_beta is None:
-        left = "(a) IBM-2"
-    else:
-        left = rf"(a) IBM-2 ($C_{{\beta}}={float(c_beta):.1f}$)"
-    right = "(b) Expt."
-    return left, right
+def _spectra_panel_labels(z):
+    # 原子核名は入れず、図番号のみでラベルを付ける。
+    mapping = {
+        60: ("(a) IBM-2", "(b) Expt."),
+        64: ("(c) IBM-2", "(d) Expt."),
+        62: ("(a) IBM-2", "(b) Expt."),
+    }
+    return mapping.get(z, ("(a) IBM-2", "(b) Expt."))
 
 
 def _z_panel_label(z):
@@ -476,7 +477,7 @@ def main():
 
             if z_pred_df is not None and not z_pred_df.empty:
                 if args.type in ["spectra", "all"]:
-                    panel_labels = _spectra_panel_labels(model_config.get("fixed_C_beta"))
+                    panel_labels = _spectra_panel_labels(z)
                     z_vis.plot_spectra(
                         z_pred_df,
                         z_expt_df,

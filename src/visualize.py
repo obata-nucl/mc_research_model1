@@ -24,6 +24,15 @@ class IBM2Visualizer:
         stem = Path(filename).stem
         return self.save_dir / f"{stem}.pdf"
 
+    def _save_figure(self, fig, filename):
+        stem = Path(filename).stem
+        pdf_path = self.save_dir / f"{stem}.pdf"
+        png_path = self.save_dir / f"{stem}.png"
+        fig.savefig(pdf_path, bbox_inches="tight", pad_inches=0.08)
+        fig.savefig(png_path, bbox_inches="tight", pad_inches=0.08)
+        print(f"Saved: {pdf_path}")
+        print(f"Saved: {png_path}")
+
     HFB_COLOR = "#6A0DAD"
 
     def plot_all_pes(self, beta, pes_data_list, filename="PES_all.pdf"):
@@ -105,10 +114,8 @@ class IBM2Visualizer:
             axes.ravel()[j].axis('off')
             
         plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path}")
 
     def plot_all_pes_compare_models(self, beta, pes_data_list, model_labels, filename="PES_compare.pdf"):
         """
@@ -188,10 +195,8 @@ class IBM2Visualizer:
             axes.ravel()[j].axis("off")
 
         plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path}")
 
     def plot_parameters_evolution(self, n_list, z_list, params_dict, filename="params.pdf"):
         """
@@ -222,8 +227,8 @@ class IBM2Visualizer:
         element_symbols = {60: "Nd", 62: "Sm", 64: "Gd"}
 
         param_limits = {
-            "epsilon": (0.0, 3.5),
-            "kappa": (-1.0, 0.0),
+            "epsilon": (0.0, 2.0),
+            "kappa": (-0.6, 0.0),
             "chi_pi": (-1.5, 0.0),
             "chi_nu": (-1.5, 0.0)
         }
@@ -275,10 +280,10 @@ class IBM2Visualizer:
             )
 
             if i >= 2:
-                ax.set_xlabel("Neutron Number N", fontsize=22)
+                ax.set_xlabel("Neutron Number N", fontsize=24)
             else:
                 ax.set_xlabel("")
-            ax.set_ylabel(keys_labels[i], fontsize=22)
+            ax.set_ylabel(keys_labels[i], fontsize=26)
             ax.grid(True, linestyle="--", alpha=0.5)
             ax.tick_params(labelsize=18, width=1.4)
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -290,10 +295,8 @@ class IBM2Visualizer:
             ax.legend(fontsize=20)
         
         plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path}")
 
     def plot_loss_history(self, train_loss, val_loss, filename="loss.pdf", lr=None):
         """
@@ -342,16 +345,14 @@ class IBM2Visualizer:
             ax2.yaxis.set_major_locator(MaxNLocator(nbins=4))
         
         plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path}")
 
     def plot_spectra(self, pred_df, expt_df, filename="spectra.pdf", levels=None, panel_labels=None):
         """
         エネルギー準位の比較プロット (Project 1 style)
         """
-        fig, ax = plt.subplots(1, 2, figsize=(12, 5.2), sharey=False)
+        fig, ax = plt.subplots(1, 2, figsize=(12, 5.2), sharey=True, gridspec_kw={"wspace": 0.0})
         
         if levels is None:
             levels = ["2+_1", "4+_1", "6+_1", "0+_2"]
@@ -409,7 +410,7 @@ class IBM2Visualizer:
                 0.96,
                 left_label,
                 transform=ax[0].transAxes,
-                fontsize=16,
+                fontsize=24,
                 va="top",
                 ha="left",
                 bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 1.5},
@@ -419,19 +420,28 @@ class IBM2Visualizer:
                 0.96,
                 right_label,
                 transform=ax[1].transAxes,
-                fontsize=16,
+                fontsize=24,
                 va="top",
                 ha="left",
                 bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 1.5},
             )
 
         for a in ax:
-            a.set_xlabel("Neutron Number", fontsize=16)
-            a.set_ylabel("Energy [MeV]", fontsize=16)
-            a.legend(loc="best", fontsize=12)
+            a.set_xlabel("Neutron Number", fontsize=26)
             a.grid(True, linestyle='--', alpha=0.5)
-            a.tick_params(labelsize=16)
+            a.tick_params(labelsize=20)
             a.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+        # 右パネルの左側Y目盛ラベルを消して、中央の余白を詰める
+        ax[1].tick_params(labelleft=False)
+
+        # 共有Y軸なのでラベルは左パネルのみに表示
+        ax[0].set_ylabel("Energy [MeV]", fontsize=24)
+
+        # 凡例は1つだけ表示
+        handles, labels = ax[0].get_legend_handles_labels()
+        if len(handles) > 0:
+            ax[0].legend(loc="best", fontsize=16)
 
         # Calculate max Y for shared axis
         max_y = 2.0
@@ -445,23 +455,12 @@ class IBM2Visualizer:
         
         limit_y = max_y * 1.1
 
-        ax[1].set_ylim(0.0, 2.0)
-            
-        plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
-        print(f"Saved: {save_path}")
-
-        # Additional plot: Shared Y-axis (aligned)
         ax[0].set_ylim(0.0, limit_y)
         ax[1].set_ylim(0.0, limit_y)
-        
-        stem = Path(filename).stem
-        save_path_fixed = self.save_dir / f"{stem}_common_scale.pdf"
-        
-        plt.savefig(save_path_fixed)
+            
+        fig.subplots_adjust(left=0.10, right=0.98, bottom=0.20, top=0.97, wspace=0.0)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path_fixed}")
 
     def plot_ratio(self, pred_df, expt_df, filename="ratio.pdf", panel_label=None):
         """
@@ -508,7 +507,5 @@ class IBM2Visualizer:
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         
         plt.tight_layout()
-        save_path = self._pdf_path(filename)
-        plt.savefig(save_path)
+        self._save_figure(fig, filename)
         plt.close()
-        print(f"Saved: {save_path}")
